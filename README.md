@@ -15,9 +15,12 @@ This code is to create a proveably random smart contract lottery.
     - Chainlink Automation -> Time-based Trigger. 
 
 ## Chores
-1. Write deploy scripts. 
+1. Write deploy scripts . 
 2. Write a helperConfig to set the configuration per chain. 
-3. Write our tests.
+3. Write our tests. 
       - Work on a local chain. 
       - Forked Testnet. 
       - Forked Mainnet.
+
+
+// Create subscription programmatically

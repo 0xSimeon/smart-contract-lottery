@@ -69,7 +69,10 @@ contract RaffleTest is Test {
     function testEmitEventOnEntrance() public {
         vm.prank(PLAYER);
 
-        ///@dev events in foundry occurs in 3 ways: (1) we expect the emit with expectEmit() (2) we emit the event by ourselves. (3) we make a transaction that emits that event.
+        ///@dev events in foundry occurs in 3 ways: 
+        ///(1) we expect the emit with expectEmit() 
+        ///(2) we emit the event by ourselves. 
+        ///(3) we make a transaction that emits that event.
         ///@notice  First argument is true because we have a topic in that index.
         vm.expectEmit(true, false, false, false, address(raffle));
         emit EnteredRaffle(PLAYER);
