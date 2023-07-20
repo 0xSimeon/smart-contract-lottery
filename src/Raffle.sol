@@ -36,7 +36,7 @@ import {VRFConsumerBaseV2} from "@chainlink/contracts/src/v0.8/VRFConsumerBaseV2
 contract Raffle is VRFConsumerBaseV2 {
     error Raffle__NotEnoughETHSent();
     error Raffle__TransferFailed();
-    error Raffle__NotOpen();
+    error Raffle__RaffleNotOpen();
     error Raffle__UpkeepNotNeeded(
         uint256 currentBalance,
         uint256 numPlayers,
@@ -74,6 +74,7 @@ contract Raffle is VRFConsumerBaseV2 {
      */
     event EnteredRaffle(address indexed player);
     event PickedWinner(address indexed winner);
+    event RequestRaffleWinner(uint256 indexed requestId);
 
     constructor(
         uint256 entranceFee,
@@ -106,7 +107,7 @@ contract Raffle is VRFConsumerBaseV2 {
         }
 
         if (s_raffleState != RaffleState.OPEN) {
-            revert Raffle__NotOpen();
+            revert Raffle__RaffleNotOpen();
         }
 
         // Add depositor to list of players.
@@ -125,10 +126,10 @@ contract Raffle is VRFConsumerBaseV2 {
     function checkUpkeep(
         bytes memory /*checkData*/
     ) public view returns (bool upkeepNeeded, bytes memory /* performData */) {
-        bool timeHasPassed = (block.timestamp - s_lastTimeStamp) >= i_interval;
         bool isOpen = RaffleState.OPEN == s_raffleState;
-        bool hasBalance = address(this).balance > 0;
+        bool timeHasPassed = (block.timestamp - s_lastTimeStamp) > i_interval;
         bool hasPlayers = s_players.length > 0;
+        bool hasBalance = address(this).balance > 0;
         upkeepNeeded = (timeHasPassed && isOpen && hasBalance && hasPlayers);
         return (upkeepNeeded, "0x0");
     }
@@ -136,7 +137,7 @@ contract Raffle is VRFConsumerBaseV2 {
     // 1. Get a random number.
     // 2. Use the random number to pick a player.
     // 3. Be automatically called.  No manual calls.
-    function performUpkeep(bytes calldata /* performData */) external {
+    function performUpkeep(bytes calldata /* performData */) external  {
         // Check if enough time has passed.
         (bool upkeepNeeded, ) = checkUpkeep("");
         if (!upkeepNeeded) {
@@ -147,13 +148,17 @@ contract Raffle is VRFConsumerBaseV2 {
             );
         }
 
-        i_vrfCoordinator.requestRandomWords(
+        s_raffleState = RaffleState.CALCULATING;
+       uint256 requestId =  i_vrfCoordinator.requestRandomWords(
             i_gasLane,
             i_subscriptionId,
             REQUEST_CONFIRMATIONS,
             i_callbackGasLimit,
             NUM_WORDS
         );
+
+        emit RequestRaffleWinner(requestId);
+
     }
 
     function fulfillRandomWords(
@@ -191,6 +196,18 @@ contract Raffle is VRFConsumerBaseV2 {
 
     function getPlayer(uint256 indexOfPlayer) external view returns (address) {
         return s_players[indexOfPlayer];
+    }
+
+    function getRecentWinner() external view returns (address) {
+        return s_recentWinner;
+    }   
+
+    function getLengthOfPlayers() external view returns (uint256) {
+        return s_players.length;
+    }
+
+    function getLastTimeStamp() external view returns (uint256) {
+        return s_lastTimeStamp;
     }
 
 }
